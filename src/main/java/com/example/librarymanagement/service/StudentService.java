@@ -20,4 +20,19 @@ public class StudentService {
     public List<Student> getAllStudents() {
     return studentRepository.findAll();
 }
+public Student getStudentById(int id){
+    return studentRepository.findById(id).orElse(null);
+}
+public Student updateStudent(int id, Student student){
+    Student existingStudent= studentRepository.findById(id).orElse(null);
+    if(existingStudent == null){
+        return null;
+    }
+    existingStudent.setName(student.getName());
+    existingStudent.setEmail(student.getEmail());
+    return  studentRepository.save(existingStudent);
+}
+public  void deleteStudent(int id){
+    studentRepository.deleteById(id);
+}
 }
