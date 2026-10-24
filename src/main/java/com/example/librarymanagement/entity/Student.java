@@ -1,5 +1,7 @@
 package com.example.librarymanagement.entity;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,8 +16,11 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @NotBlank(message = "Student name is required")
     private String name;
 
+    @NotBlank(message = "Student email is required")
+    @Email(message = "Invalid email format")
     private String email;
 
     public Student() {

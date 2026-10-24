@@ -1,6 +1,8 @@
 package com.example.librarymanagement.service;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -56,13 +58,13 @@ public class BookIssueService {
                 .findById(request.getStudentId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Student not found"));
+                        "Student not found with id: " + request.getStudentId()));
 
         Book book = bookRepository
                 .findById(request.getBookId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Book not found"));
+                        "Book not found with id: " + request.getBookId()));
 
         if (!book.isAvailable()) {
             throw new ResponseStatusException(
@@ -91,7 +93,7 @@ public class BookIssueService {
         BookIssue bookIssue = bookIssueRepository.findById(issueId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Book issue record not found"));
+                        "Book issue record not found with id: " + issueId));
 
         if (bookIssue.getReturnDate() != null) {
             throw new ResponseStatusException(
@@ -111,14 +113,55 @@ public class BookIssueService {
         return toResponse(savedIssue);
     }
 
+    @Transactional(readOnly = true)
+    public List<BookIssueResponse> getAllIssues() {
+        return bookIssueRepository.findAllWithStudentAndBook()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookIssueResponse> getActiveIssues() {
+        return bookIssueRepository.findActiveIssuesWithStudentAndBook()
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public BookIssueResponse getIssueById(int issueId) {
+        BookIssue issue = bookIssueRepository.findById(issueId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Book issue record not found with id: " + issueId));
+        return toResponse(issue);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookIssueResponse> getIssuesByStudent(int studentId) {
+        return bookIssueRepository.findByStudentIdOrderByIdDesc(studentId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookIssueResponse> getIssuesByBook(int bookId) {
+        return bookIssueRepository.findByBookIdOrderByIdDesc(bookId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private BookIssueResponse toResponse(BookIssue bookIssue) {
 
         return new BookIssueResponse(
                 bookIssue.getId(),
-                bookIssue.getStudent().getId(),
-                bookIssue.getStudent().getName(),
-                bookIssue.getBook().getId(),
-                bookIssue.getBook().getTitle(),
+                bookIssue.getStudent() != null ? bookIssue.getStudent().getId() : 0,
+                bookIssue.getStudent() != null ? bookIssue.getStudent().getName() : "Unknown",
+                bookIssue.getBook() != null ? bookIssue.getBook().getId() : 0,
+                bookIssue.getBook() != null ? bookIssue.getBook().getTitle() : "Unknown",
                 bookIssue.getIssueDate(),
                 bookIssue.getDueDate(),
                 bookIssue.getReturnDate()

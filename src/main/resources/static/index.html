@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+        .tab-active {
+            border-bottom: 3px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+        .toast {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- Navigation Header -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-lg">
+                        <i class="fa-solid fa-book-bookmark text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300">
+                            BiblioHub
+                        </span>
+                        <span class="text-xs block text-slate-400 -mt-1 font-medium">Library Management System</span>
+                    </div>
+                </div>
+
+                <!-- Live System Indicator -->
+                <div class="flex items-center space-x-4">
+                    <div class="hidden sm:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700/60 text-xs">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-slate-300">API Server Live</span>
+                    </div>
+                    <a href="/swagger-ui.html" target="_blank" class="text-xs bg-brand-600/30 hover:bg-brand-600/50 text-indigo-200 border border-brand-500/40 px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-code text-xs"></i>
+                        <span>Swagger Docs</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-white border-b border-slate-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 text-sm overflow-x-auto">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="py-3.5 px-1 border-b-2 font-medium text-slate-600 hover:text-brand-600 border-transparent transition flex items-center space-x-2 tab-active">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('books')" id="nav-books" class="py-3.5 px-1 border-b-2 font-medium text-slate-600 hover:text-brand-600 border-transparent transition flex items-center space-x-2">
+                    <i class="fa-solid fa-book"></i>
+                    <span>Books Catalog</span>
+                </button>
+                <button onclick="switchTab('students')" id="nav-students" class="py-3.5 px-1 border-b-2 font-medium text-slate-600 hover:text-brand-600 border-transparent transition flex items-center space-x-2">
+                    <i class="fa-solid fa-user-graduate"></i>
+                    <span>Students</span>
+                </button>
+                <button onclick="switchTab('issues')" id="nav-issues" class="py-3.5 px-1 border-b-2 font-medium text-slate-600 hover:text-brand-600 border-transparent transition flex items-center space-x-2">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    <span>Issue & Return Desk</span>
+                </button>
+                <button onclick="switchTab('history')" id="nav-history" class="py-3.5 px-1 border-b-2 font-medium text-slate-600 hover:text-brand-600 border-transparent transition flex items-center space-x-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Issue Records</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ======================= 1. DASHBOARD TAB ======================= -->
+        <section id="tab-dashboard" class="space-y-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Library Overview</h1>
+                    <p class="text-sm text-slate-500 mt-1">Real-time statistics and quick library operations</p>
+                </div>
+                <div class="flex flex-wrap gap-2.5">
+                    <button onclick="openModal('modal-add-book')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg font-medium transition shadow-sm flex items-center space-x-2">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Book</span>
+                    </button>
+                    <button onclick="openModal('modal-add-student')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2 rounded-lg font-medium transition shadow-sm flex items-center space-x-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Add Student</span>
+                    </button>
+                    <button onclick="switchTab('issues')" class="bg-slate-800 hover:bg-slate-900 text-white text-sm px-4 py-2 rounded-lg font-medium transition shadow-sm flex items-center space-x-2">
+                        <i class="fa-solid fa-hand-holding-hand"></i>
+                        <span>Issue Book</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Total Books -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Books</p>
+                        <h3 id="stat-total-books" class="text-3xl font-extrabold text-slate-900 mt-2">0</h3>
+                        <p class="text-xs text-slate-500 mt-1">In library inventory</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                </div>
+
+                <!-- Available Books -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Available Books</p>
+                        <h3 id="stat-available-books" class="text-3xl font-extrabold text-emerald-600 mt-2">0</h3>
+                        <p class="text-xs text-slate-500 mt-1">Ready to borrow</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+
+                <!-- Currently Issued -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Currently Issued</p>
+                        <h3 id="stat-issued-books" class="text-3xl font-extrabold text-amber-600 mt-2">0</h3>
+                        <p class="text-xs text-slate-500 mt-1">Borrowed by students</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                </div>
+
+                <!-- Registered Students -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Registered Students</p>
+                        <h3 id="stat-total-students" class="text-3xl font-extrabold text-purple-600 mt-2">0</h3>
+                        <p class="text-xs text-slate-500 mt-1">Active library members</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overdue Warning Banner -->
+            <div id="overdue-banner" class="hidden bg-red-50 border border-red-200 p-4 rounded-xl flex items-start space-x-3">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5 text-lg"></i>
+                <div class="flex-1">
+                    <h4 class="text-sm font-semibold text-red-800">Overdue Books Alert</h4>
+                    <p id="overdue-count-text" class="text-xs text-red-700 mt-0.5">There are books past their due date.</p>
+                </div>
+                <button onclick="switchTab('history'); filterHistory('active')" class="text-xs bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-1.5 rounded-lg transition">
+                    View Overdue
+                </button>
+            </div>
+
+            <!-- Recent Active Issues Preview -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-list-check text-indigo-600"></i>
+                        <span>Recent Active Loans</span>
+                    </h3>
+                    <button onclick="switchTab('history')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                        View All Issues &rarr;
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-slate-400 uppercase bg-slate-50/80 border-b border-slate-100">
+                            <tr>
+                                <th class="py-3 px-4">Loan ID</th>
+                                <th class="py-3 px-4">Book Title</th>
+                                <th class="py-3 px-4">Student</th>
+                                <th class="py-3 px-4">Issue Date</th>
+                                <th class="py-3 px-4">Due Date</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboard-recent-table" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="7" class="py-8 text-center text-slate-400">Loading loans...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================= 2. BOOKS TAB ======================= -->
+        <section id="tab-books" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Books Catalog</h1>
+                    <p class="text-sm text-slate-500 mt-1">Manage books inventory, availability, and details</p>
+                </div>
+                <button onclick="openModal('modal-add-book')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2.5 rounded-lg font-medium transition shadow-sm flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>Add New Book</span>
+                </button>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="book-search-input" oninput="debounceFilterBooks()" placeholder="Search by title, author, or ISBN..." 
+                           class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex gap-2">
+                    <select id="book-filter-availability" onchange="renderBooksTable()" class="bg-slate-50 border border-slate-200 text-sm rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="all">All Statuses</option>
+                        <option value="available">Available Only</option>
+                        <option value="issued">Issued Only</option>
+                    </select>
+                    <button onclick="loadBooks()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm transition" title="Refresh Books">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Books Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3.5 px-4 font-semibold">ID</th>
+                                <th class="py-3.5 px-4 font-semibold">Title</th>
+                                <th class="py-3.5 px-4 font-semibold">Author</th>
+                                <th class="py-3.5 px-4 font-semibold">ISBN</th>
+                                <th class="py-3.5 px-4 font-semibold">Status</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="books-table-body" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="6" class="py-12 text-center text-slate-400">Loading catalog...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================= 3. STUDENTS TAB ======================= -->
+        <section id="tab-students" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Student Directory</h1>
+                    <p class="text-sm text-slate-500 mt-1">Manage student library registrations</p>
+                </div>
+                <button onclick="openModal('modal-add-student')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4 py-2.5 rounded-lg font-medium transition shadow-sm flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Register Student</span>
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                    <input type="text" id="student-search-input" oninput="debounceFilterStudents()" placeholder="Search by name or email..." 
+                           class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <button onclick="loadStudents()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm transition" title="Refresh Students">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+            </div>
+
+            <!-- Students Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3.5 px-4 font-semibold">Student ID</th>
+                                <th class="py-3.5 px-4 font-semibold">Full Name</th>
+                                <th class="py-3.5 px-4 font-semibold">Email</th>
+                                <th class="py-3.5 px-4 font-semibold">Active Loans</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="5" class="py-12 text-center text-slate-400">Loading student directory...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================= 4. ISSUE & RETURN DESK ======================= -->
+        <section id="tab-issues" class="hidden space-y-8">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">Issue & Return Desk</h1>
+                <p class="text-sm text-slate-500 mt-1">Issue books to students or process return submissions</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Issue Book Card -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-book-medical"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Issue a Book</h2>
+                            <p class="text-xs text-slate-500">Assign an available book to a student</p>
+                        </div>
+                    </div>
+
+                    <form id="form-issue-book" onsubmit="handleIssueBook(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1.5">Select Student *</label>
+                            <select id="issue-student-select" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Choose Student --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1.5">Select Book (Available only) *</label>
+                            <select id="issue-book-select" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Choose Book --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1.5">Due Date *</label>
+                            <input type="date" id="issue-due-date" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <span class="text-xs text-slate-400 mt-1 block">Default set to 14 days from today</span>
+                        </div>
+
+                        <button type="submit" id="btn-submit-issue" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Confirm & Issue Book</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Fast Return Card -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-bold text-slate-900">Process Return</h2>
+                                <p class="text-xs text-slate-500">Quickly return a borrowed book by loan ID</p>
+                            </div>
+                        </div>
+
+                        <form id="form-quick-return" onsubmit="handleQuickReturn(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1.5">Loan / Issue ID *</label>
+                                <input type="number" id="quick-return-id" required placeholder="Enter Issue ID (e.g. 1)" 
+                                       class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            </div>
+
+                            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-sm flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-arrow-turn-down"></i>
+                                <span>Mark as Returned</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-slate-100 bg-slate-50/50 -mx-6 -mb-6 p-6 rounded-b-2xl">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Need to find an active Loan ID?</p>
+                        <p class="text-xs text-slate-600 mb-3">You can view all active loans and return any book with a single click in the <span class="font-medium text-indigo-600 cursor-pointer" onclick="switchTab('history')">Issue Records tab</span>.</p>
+                        <button onclick="switchTab('history')" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center space-x-1">
+                            <span>Open Active Loans List</span>
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================= 5. ISSUE RECORDS TAB ======================= -->
+        <section id="tab-history" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Issue Records & History</h1>
+                    <p class="text-sm text-slate-500 mt-1">Complete log of active loans and return history</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="loadIssues()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Buttons & Search -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex space-x-2 w-full sm:w-auto">
+                    <button id="btn-filter-all-issues" onclick="filterHistory('all')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition">All Records</button>
+                    <button id="btn-filter-active-issues" onclick="filterHistory('active')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Active (Unreturned)</button>
+                    <button id="btn-filter-returned-issues" onclick="filterHistory('returned')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Returned Only</button>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" id="history-search-input" oninput="debounceFilterHistory()" placeholder="Filter by book or student..." 
+                           class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <!-- Issues Table -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50/80 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3.5 px-4 font-semibold">Loan ID</th>
+                                <th class="py-3.5 px-4 font-semibold">Book Title</th>
+                                <th class="py-3.5 px-4 font-semibold">Student Name</th>
+                                <th class="py-3.5 px-4 font-semibold">Issue Date</th>
+                                <th class="py-3.5 px-4 font-semibold">Due Date</th>
+                                <th class="py-3.5 px-4 font-semibold">Status / Return Date</th>
+                                <th class="py-3.5 px-4 font-semibold text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="7" class="py-12 text-center text-slate-400">Loading loan records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ======================= MODALS ======================= -->
+
+    <!-- Add Book Modal -->
+    <div id="modal-add-book" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('modal-add-book')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Add New Book</h3>
+            <p class="text-xs text-slate-500 mb-4">Add a new title to the library catalog</p>
+
+            <form id="form-add-book" onsubmit="handleAddBook(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Title *</label>
+                    <input type="text" id="add-book-title" required placeholder="e.g. The Pragmatic Programmer" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Author *</label>
+                    <input type="text" id="add-book-author" required placeholder="e.g. David Thomas, Andrew Hunt" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">ISBN *</label>
+                    <input type="text" id="add-book-isbn" required placeholder="e.g. 978-0135957059" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="add-book-available" checked class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                    <label for="add-book-available" class="text-sm text-slate-700">Mark Available Immediately</label>
+                </div>
+                <div class="pt-3 flex space-x-2">
+                    <button type="button" onclick="closeModal('modal-add-book')" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition shadow-sm">Save Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Book Modal -->
+    <div id="modal-edit-book" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('modal-edit-book')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Edit Book</h3>
+            <p class="text-xs text-slate-500 mb-4">Modify book details</p>
+
+            <form id="form-edit-book" onsubmit="handleEditBook(event)" class="space-y-4">
+                <input type="hidden" id="edit-book-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Title *</label>
+                    <input type="text" id="edit-book-title" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Author *</label>
+                    <input type="text" id="edit-book-author" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">ISBN *</label>
+                    <input type="text" id="edit-book-isbn" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex items-center space-x-2 pt-1">
+                    <input type="checkbox" id="edit-book-available" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                    <label for="edit-book-available" class="text-sm text-slate-700">Available</label>
+                </div>
+                <div class="pt-3 flex space-x-2">
+                    <button type="button" onclick="closeModal('modal-edit-book')" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition shadow-sm">Update Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div id="modal-add-student" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('modal-add-student')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Register New Student</h3>
+            <p class="text-xs text-slate-500 mb-4">Add a new student membership</p>
+
+            <form id="form-add-student" onsubmit="handleAddStudent(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Full Name *</label>
+                    <input type="text" id="add-student-name" required placeholder="e.g. Ishika Rathod" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email Address *</label>
+                    <input type="email" id="add-student-email" required placeholder="e.g. ishika@example.com" 
+                           class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="pt-3 flex space-x-2">
+                    <button type="button" onclick="closeModal('modal-add-student')" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition shadow-sm">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="modal-edit-student" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('modal-edit-student')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Edit Student</h3>
+            <p class="text-xs text-slate-500 mb-4">Modify student details</p>
+
+            <form id="form-edit-student" onsubmit="handleEditStudent(event)" class="space-y-4">
+                <input type="hidden" id="edit-student-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Full Name *</label>
+                    <input type="text" id="edit-student-name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email Address *</label>
+                    <input type="email" id="edit-student-email" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div class="pt-3 flex space-x-2">
+                    <button type="button" onclick="closeModal('modal-edit-student')" class="flex-1 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition shadow-sm">Update Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 BiblioHub Library Management System &bull; Powered by Spring Boot 4 &amp; Java 25 &bull; Developed by Ishika Rathod</p>
+    </footer>
+
+    <!-- App JavaScript Logic -->
+    <script>
+        // State
+        let allBooks = [];
+        let allStudents = [];
+        let allIssues = [];
+        let currentHistoryFilter = 'all';
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            initDefaultDueDate();
+            loadAllData();
+        });
+
+        function initDefaultDueDate() {
+            const today = new Date();
+            const dueDate = new Date();
+            dueDate.setDate(today.getDate() + 14);
+
+            const format = (d) => d.toISOString().split('T')[0];
+            const issueDueInput = document.getElementById('issue-due-date');
+            if (issueDueInput) {
+                issueDueInput.value = format(dueDate);
+                issueDueInput.min = format(today);
+            }
+        }
+
+        // Navigation
+        function switchTab(tabName) {
+            const tabs = ['dashboard', 'books', 'students', 'issues', 'history'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (el) el.classList.toggle('hidden', t !== tabName);
+                if (nav) {
+                    if (t === tabName) {
+                        nav.classList.add('tab-active');
+                    } else {
+                        nav.classList.remove('tab-active');
+                    }
+                }
+            });
+
+            if (tabName === 'issues') {
+                populateIssueDropdowns();
+            }
+        }
+
+        // Modals
+        function openModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('hidden');
+        }
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        }
+
+        // Toast system
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-white text-sm flex items-center space-x-2.5 transition ${
+                type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-slate-800'
+            }`;
+            const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${escapeHtml(message)}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Data Loaders
+        async function loadAllData() {
+            await Promise.all([loadBooks(), loadStudents(), loadIssues()]);
+            updateDashboard();
+        }
+
+        async function loadBooks() {
+            try {
+                const res = await fetch('/books');
+                if (!res.ok) throw new Error('Failed to fetch books');
+                allBooks = await res.json();
+                renderBooksTable();
+                updateDashboard();
+                populateIssueDropdowns();
+            } catch (err) {
+                console.error(err);
+                showToast('Error loading books', 'error');
+            }
+        }
+
+        async function loadStudents() {
+            try {
+                const res = await fetch('/students');
+                if (!res.ok) throw new Error('Failed to fetch students');
+                allStudents = await res.json();
+                renderStudentsTable();
+                updateDashboard();
+                populateIssueDropdowns();
+            } catch (err) {
+                console.error(err);
+                showToast('Error loading students', 'error');
+            }
+        }
+
+        async function loadIssues() {
+            try {
+                const res = await fetch('/book-issues');
+                if (!res.ok) throw new Error('Failed to fetch book issues');
+                allIssues = await res.json();
+                renderHistoryTable();
+                updateDashboard();
+            } catch (err) {
+                console.error(err);
+                showToast('Error loading issues', 'error');
+            }
+        }
+
+        // Dashboard Stats & Overdue
+        function updateDashboard() {
+            const totalBooks = allBooks.length;
+            const availableBooks = allBooks.filter(b => b.available).length;
+            const issuedBooks = totalBooks - availableBooks;
+            const totalStudents = allStudents.length;
+
+            document.getElementById('stat-total-books').textContent = totalBooks;
+            document.getElementById('stat-available-books').textContent = availableBooks;
+            document.getElementById('stat-issued-books').textContent = issuedBooks;
+            document.getElementById('stat-total-students').textContent = totalStudents;
+
+            // Check overdue
+            const today = new Date().toISOString().split('T')[0];
+            const activeIssues = allIssues.filter(i => !i.returnDate);
+            const overdueIssues = activeIssues.filter(i => i.dueDate < today);
+
+            const banner = document.getElementById('overdue-banner');
+            const overdueText = document.getElementById('overdue-count-text');
+            if (overdueIssues.length > 0) {
+                banner.classList.remove('hidden');
+                overdueText.textContent = `${overdueIssues.length} book(s) have passed their due date and require return.`;
+            } else {
+                banner.classList.add('hidden');
+            }
+
+            // Recent table on dashboard
+            const recent = [...activeIssues].slice(0, 5);
+            const tbody = document.getElementById('dashboard-recent-table');
+            if (recent.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No active book loans. Everything is returned!</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = recent.map(item => {
+                const isOverdue = item.dueDate < today;
+                return `
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3 px-4 font-mono font-medium text-slate-600">#${item.id}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(item.bookTitle)}</td>
+                        <td class="py-3 px-4 text-slate-600">${escapeHtml(item.studentName)}</td>
+                        <td class="py-3 px-4 text-slate-500 font-mono text-xs">${item.issueDate}</td>
+                        <td class="py-3 px-4 text-slate-500 font-mono text-xs">${item.dueDate}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                isOverdue ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                            }">
+                                ${isOverdue ? 'Overdue' : 'Active'}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="returnBook(${item.id})" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-2.5 py-1 rounded-md transition">
+                                Return
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Render Books Table
+        function renderBooksTable() {
+            const tbody = document.getElementById('books-table-body');
+            const search = (document.getElementById('book-search-input')?.value || '').toLowerCase().trim();
+            const filter = document.getElementById('book-filter-availability')?.value || 'all';
+
+            let filtered = allBooks.filter(b => {
+                const matchesSearch = b.title.toLowerCase().includes(search) || 
+                                      b.author.toLowerCase().includes(search) || 
+                                      b.isbn.toLowerCase().includes(search);
+                const matchesFilter = filter === 'all' || 
+                                      (filter === 'available' && b.available) || 
+                                      (filter === 'issued' && !b.available);
+                return matchesSearch && matchesFilter;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400">No books found matching criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(b => `
+                <tr class="hover:bg-slate-50/70 transition">
+                    <td class="py-3.5 px-4 font-mono font-medium text-slate-500 text-xs">#${b.id}</td>
+                    <td class="py-3.5 px-4 font-semibold text-slate-800">${escapeHtml(b.title)}</td>
+                    <td class="py-3.5 px-4 text-slate-600">${escapeHtml(b.author)}</td>
+                    <td class="py-3.5 px-4 font-mono text-xs text-slate-500">${escapeHtml(b.isbn)}</td>
+                    <td class="py-3.5 px-4">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            b.available ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }">
+                            <span class="w-1.5 h-1.5 rounded-full mr-1.5 ${b.available ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+                            ${b.available ? 'Available' : 'Issued'}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-right space-x-1.5">
+                        ${b.available ? `
+                            <button onclick="quickSelectBookToIssue(${b.id})" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-2.5 py-1 rounded-md transition" title="Issue this book">
+                                Issue
+                            </button>
+                        ` : ''}
+                        <button onclick="openEditBookModal(${b.id})" class="text-xs text-slate-600 hover:text-indigo-600 px-2 py-1 transition" title="Edit Book">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteBook(${b.id})" class="text-xs text-slate-400 hover:text-red-600 px-2 py-1 transition" title="Delete Book">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Render Students Table
+        function renderStudentsTable() {
+            const tbody = document.getElementById('students-table-body');
+            const search = (document.getElementById('student-search-input')?.value || '').toLowerCase().trim();
+
+            let filtered = allStudents.filter(s => {
+                return s.name.toLowerCase().includes(search) || s.email.toLowerCase().includes(search);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-slate-400">No students found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => {
+                const activeLoans = allIssues.filter(i => i.studentId === s.id && !i.returnDate).length;
+                return `
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3.5 px-4 font-mono font-medium text-slate-500 text-xs">#${s.id}</td>
+                        <td class="py-3.5 px-4 font-semibold text-slate-800">${escapeHtml(s.name)}</td>
+                        <td class="py-3.5 px-4 text-slate-600">${escapeHtml(s.email)}</td>
+                        <td class="py-3.5 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                activeLoans > 0 ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                            }">
+                                ${activeLoans} active book(s)
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-4 text-right space-x-1.5">
+                            <button onclick="openEditStudentModal(${s.id})" class="text-xs text-slate-600 hover:text-emerald-600 px-2 py-1 transition" title="Edit Student">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteStudent(${s.id})" class="text-xs text-slate-400 hover:text-red-600 px-2 py-1 transition" title="Delete Student">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Render Issues / History Table
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-table-body');
+            const search = (document.getElementById('history-search-input')?.value || '').toLowerCase().trim();
+            const today = new Date().toISOString().split('T')[0];
+
+            let filtered = allIssues.filter(i => {
+                const matchesFilter = currentHistoryFilter === 'all' || 
+                                      (currentHistoryFilter === 'active' && !i.returnDate) || 
+                                      (currentHistoryFilter === 'returned' && i.returnDate);
+                const matchesSearch = i.bookTitle.toLowerCase().includes(search) || 
+                                      i.studentName.toLowerCase().includes(search) || 
+                                      String(i.id).includes(search);
+                return matchesFilter && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-slate-400">No issue records found for selected filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => {
+                const isReturned = !!item.returnDate;
+                const isOverdue = !isReturned && (item.dueDate < today);
+
+                return `
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="py-3.5 px-4 font-mono font-medium text-slate-600 text-xs">#${item.id}</td>
+                        <td class="py-3.5 px-4 font-semibold text-slate-800">
+                            ${escapeHtml(item.bookTitle)}
+                            <span class="text-xs text-slate-400 block font-normal">Book ID #${item.bookId}</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-slate-700">
+                            ${escapeHtml(item.studentName)}
+                            <span class="text-xs text-slate-400 block">Student ID #${item.studentId}</span>
+                        </td>
+                        <td class="py-3.5 px-4 font-mono text-xs text-slate-500">${item.issueDate}</td>
+                        <td class="py-3.5 px-4 font-mono text-xs text-slate-500">${item.dueDate}</td>
+                        <td class="py-3.5 px-4">
+                            ${isReturned ? `
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <i class="fa-solid fa-check mr-1.5 text-[10px]"></i> Returned ${item.returnDate}
+                                </span>
+                            ` : isOverdue ? `
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                    <i class="fa-solid fa-triangle-exclamation mr-1.5 text-[10px]"></i> Overdue
+                                </span>
+                            ` : `
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i class="fa-solid fa-clock mr-1.5 text-[10px]"></i> Active Loan
+                                </span>
+                            `}
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            ${!isReturned ? `
+                                <button onclick="returnBook(${item.id})" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm">
+                                    Return Book
+                                </button>
+                            ` : `
+                                <span class="text-xs text-slate-400">Completed</span>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterHistory(type) {
+            currentHistoryFilter = type;
+            const buttons = {
+                all: document.getElementById('btn-filter-all-issues'),
+                active: document.getElementById('btn-filter-active-issues'),
+                returned: document.getElementById('btn-filter-returned-issues')
+            };
+
+            Object.entries(buttons).forEach(([key, btn]) => {
+                if (!btn) return;
+                if (key === type) {
+                    btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+                } else {
+                    btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition";
+                }
+            });
+
+            renderHistoryTable();
+        }
+
+        // Dropdown populator for Issue Form
+        function populateIssueDropdowns() {
+            const studentSelect = document.getElementById('issue-student-select');
+            const bookSelect = document.getElementById('issue-book-select');
+
+            if (studentSelect) {
+                studentSelect.innerHTML = `<option value="">-- Choose Student --</option>` + 
+                    allStudents.map(s => `<option value="${s.id}">${escapeHtml(s.name)} (ID: #${s.id} - ${escapeHtml(s.email)})</option>`).join('');
+            }
+
+            if (bookSelect) {
+                const availableBooks = allBooks.filter(b => b.available);
+                bookSelect.innerHTML = `<option value="">-- Choose Book (${availableBooks.length} available) --</option>` + 
+                    availableBooks.map(b => `<option value="${b.id}">${escapeHtml(b.title)} by ${escapeHtml(b.author)} (ISBN: ${escapeHtml(b.isbn)})</option>`).join('');
+            }
+        }
+
+        function quickSelectBookToIssue(bookId) {
+            switchTab('issues');
+            setTimeout(() => {
+                const bookSelect = document.getElementById('issue-book-select');
+                if (bookSelect) bookSelect.value = bookId;
+            }, 100);
+        }
+
+        // Actions: Books
+        async function handleAddBook(e) {
+            e.preventDefault();
+            const title = document.getElementById('add-book-title').value.trim();
+            const author = document.getElementById('add-book-author').value.trim();
+            const isbn = document.getElementById('add-book-isbn').value.trim();
+            const available = document.getElementById('add-book-available').checked;
+
+            try {
+                const res = await fetch('/books', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, author, isbn, available })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to add book');
+                }
+
+                closeModal('modal-add-book');
+                document.getElementById('form-add-book').reset();
+                showToast(`Book "${title}" added successfully!`);
+                await loadBooks();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        function openEditBookModal(id) {
+            const book = allBooks.find(b => b.id === id);
+            if (!book) return;
+
+            document.getElementById('edit-book-id').value = book.id;
+            document.getElementById('edit-book-title').value = book.title;
+            document.getElementById('edit-book-author').value = book.author;
+            document.getElementById('edit-book-isbn').value = book.isbn;
+            document.getElementById('edit-book-available').checked = book.available;
+
+            openModal('modal-edit-book');
+        }
+
+        async function handleEditBook(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-book-id').value;
+            const title = document.getElementById('edit-book-title').value.trim();
+            const author = document.getElementById('edit-book-author').value.trim();
+            const isbn = document.getElementById('edit-book-isbn').value.trim();
+            const available = document.getElementById('edit-book-available').checked;
+
+            try {
+                const res = await fetch(`/books/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, title, author, isbn, available })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to update book');
+                }
+
+                closeModal('modal-edit-book');
+                showToast(`Book updated successfully!`);
+                await loadBooks();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function deleteBook(id) {
+            const book = allBooks.find(b => b.id === id);
+            if (!confirm(`Are you sure you want to delete book "${book?.title || id}"?`)) return;
+
+            try {
+                const res = await fetch(`/books/${id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to delete book');
+                }
+                showToast('Book deleted successfully');
+                await loadBooks();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        // Actions: Students
+        async function handleAddStudent(e) {
+            e.preventDefault();
+            const name = document.getElementById('add-student-name').value.trim();
+            const email = document.getElementById('add-student-email').value.trim();
+
+            try {
+                const res = await fetch('/students', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to register student');
+                }
+
+                closeModal('modal-add-student');
+                document.getElementById('form-add-student').reset();
+                showToast(`Student "${name}" registered successfully!`);
+                await loadStudents();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        function openEditStudentModal(id) {
+            const student = allStudents.find(s => s.id === id);
+            if (!student) return;
+
+            document.getElementById('edit-student-id').value = student.id;
+            document.getElementById('edit-student-name').value = student.name;
+            document.getElementById('edit-student-email').value = student.email;
+
+            openModal('modal-edit-student');
+        }
+
+        async function handleEditStudent(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-student-id').value;
+            const name = document.getElementById('edit-student-name').value.trim();
+            const email = document.getElementById('edit-student-email').value.trim();
+
+            try {
+                const res = await fetch(`/students/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, name, email })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to update student');
+                }
+
+                closeModal('modal-edit-student');
+                showToast('Student updated successfully!');
+                await loadStudents();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function deleteStudent(id) {
+            const student = allStudents.find(s => s.id === id);
+            if (!confirm(`Are you sure you want to delete student "${student?.name || id}"?`)) return;
+
+            try {
+                const res = await fetch(`/students/${id}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to delete student');
+                }
+                showToast('Student deleted successfully');
+                await loadStudents();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        // Actions: Issues & Returns
+        async function handleIssueBook(e) {
+            e.preventDefault();
+            const studentId = parseInt(document.getElementById('issue-student-select').value);
+            const bookId = parseInt(document.getElementById('issue-book-select').value);
+            const dueDate = document.getElementById('issue-due-date').value;
+
+            if (!studentId || !bookId || !dueDate) {
+                showToast('Please fill in all issue fields', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/book-issues', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ studentId, bookId, dueDate })
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to issue book');
+                }
+
+                showToast('Book successfully issued!');
+                document.getElementById('form-issue-book').reset();
+                initDefaultDueDate();
+                await Promise.all([loadBooks(), loadIssues()]);
+                switchTab('history');
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function returnBook(issueId) {
+            if (!confirm(`Confirm return of loan #${issueId}?`)) return;
+
+            try {
+                const res = await fetch(`/book-issues/${issueId}/return`, {
+                    method: 'PUT'
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Failed to return book');
+                }
+
+                showToast(`Loan #${issueId} marked as returned!`);
+                await Promise.all([loadBooks(), loadIssues()]);
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function handleQuickReturn(e) {
+            e.preventDefault();
+            const issueId = parseInt(document.getElementById('quick-return-id').value);
+            if (!issueId) return;
+
+            await returnBook(issueId);
+            document.getElementById('form-quick-return').reset();
+        }
+
+        // Debounce Utilities for instant search
+        let debounceBookTimer;
+        function debounceFilterBooks() {
+            clearTimeout(debounceBookTimer);
+            debounceBookTimer = setTimeout(renderBooksTable, 250);
+        }
+
+        let debounceStudentTimer;
+        function debounceFilterStudents() {
+            clearTimeout(debounceStudentTimer);
+            debounceStudentTimer = setTimeout(renderStudentsTable, 250);
+        }
+
+        let debounceHistoryTimer;
+        function debounceFilterHistory() {
+            clearTimeout(debounceHistoryTimer);
+            debounceHistoryTimer = setTimeout(renderHistoryTable, 250);
+        }
+    </script>
+</body>
+</html>

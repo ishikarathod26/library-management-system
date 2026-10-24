@@ -1,6 +1,7 @@
 package com.example.librarymanagement.service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -265,5 +266,65 @@ void shouldReturn404WhenIssueRecordDoesNotExist() {
 
     verifyNoInteractions(bookRepository);
     verify(bookIssueRepository, never()).save(any(BookIssue.class));
+}
+
+@Test
+void shouldReturnAllIssues() {
+    Student student = createStudent();
+    Book book = createBook(true);
+
+    BookIssue issue = new BookIssue();
+    issue.setId(1);
+    issue.setStudent(student);
+    issue.setBook(book);
+    issue.setIssueDate(LocalDate.now());
+    issue.setDueDate(LocalDate.now().plusDays(7));
+
+    when(bookIssueRepository.findAllWithStudentAndBook()).thenReturn(List.of(issue));
+
+    List<BookIssueResponse> result = bookIssueService.getAllIssues();
+
+    assertEquals(1, result.size());
+    assertEquals("Database Basics", result.get(0).getBookTitle());
+}
+
+@Test
+void shouldReturnActiveIssues() {
+    Student student = createStudent();
+    Book book = createBook(false);
+
+    BookIssue issue = new BookIssue();
+    issue.setId(1);
+    issue.setStudent(student);
+    issue.setBook(book);
+    issue.setIssueDate(LocalDate.now());
+    issue.setDueDate(LocalDate.now().plusDays(7));
+
+    when(bookIssueRepository.findActiveIssuesWithStudentAndBook()).thenReturn(List.of(issue));
+
+    List<BookIssueResponse> result = bookIssueService.getActiveIssues();
+
+    assertEquals(1, result.size());
+    assertNull(result.get(0).getReturnDate());
+}
+
+@Test
+void shouldFindIssueById() {
+    Student student = createStudent();
+    Book book = createBook(true);
+
+    BookIssue issue = new BookIssue();
+    issue.setId(1);
+    issue.setStudent(student);
+    issue.setBook(book);
+    issue.setIssueDate(LocalDate.now());
+    issue.setDueDate(LocalDate.now().plusDays(7));
+
+    when(bookIssueRepository.findById(1)).thenReturn(Optional.of(issue));
+
+    BookIssueResponse result = bookIssueService.getIssueById(1);
+
+    assertNotNull(result);
+    assertEquals(1, result.getId());
 }
 }

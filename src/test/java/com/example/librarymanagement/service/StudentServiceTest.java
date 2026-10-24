@@ -21,11 +21,14 @@ class StudentServiceTest {
     @Mock
     private StudentRepository studentRepository;
 
+    @Mock
+    private com.example.librarymanagement.repository.BookIssueRepository bookIssueRepository;
+
     private StudentService studentService;
 
     @BeforeEach
     void setUp() {
-        studentService = new StudentService(studentRepository);
+        studentService = new StudentService(studentRepository, bookIssueRepository);
     }
 
     private Student createStudent(int id, String name, String email) {
@@ -125,8 +128,33 @@ class StudentServiceTest {
 
     @Test
     void shouldDeleteStudentById() {
+        when(bookIssueRepository.existsByStudentIdAndReturnDateIsNull(1)).thenReturn(false);
+
         studentService.deleteStudent(1);
 
         verify(studentRepository).deleteById(1);
+    }
+
+    @Test
+    void shouldThrowConflictWhenDeletingStudentWithActiveIssues() {
+        when(bookIssueRepository.existsByStudentIdAndReturnDateIsNull(1)).thenReturn(true);
+
+        org.springframework.web.server.ResponseStatusException ex =
+                assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                        () -> studentService.deleteStudent(1));
+
+        assertEquals(409, ex.getStatusCode().value());
+        verify(studentRepository, never()).deleteById(1);
+    }
+
+    @Test
+    void shouldSearchStudents() {
+        List<Student> students = List.of(createStudent(1, "Ishika", "ishika@gmail.com"));
+        when(studentRepository.searchStudents("Ishika")).thenReturn(students);
+
+        List<Student> result = studentService.searchStudents("Ishika");
+
+        assertEquals(1, result.size());
+        assertEquals("Ishika", result.get(0).getName());
     }
 }
